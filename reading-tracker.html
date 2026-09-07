@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Defter — bir okuma takip uygulaması</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --ink:#26241f;
+    --ink-soft:#5b574d;
+    --paper:#efeade;
+    --paper-raised:#f7f4ea;
+    --line:#dcd5c3;
+    --green:#3c5b4e;
+    --green-dim:#e2e9e2;
+    --gold:#a9781f;
+    --gold-dim:#f1e6cd;
+    --clay:#a4472f;
+    --clay-dim:#f4e2dc;
+    --white:#fffdf8;
+    --shadow: 0 1px 2px rgba(38,36,31,0.06);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    padding-bottom:60px;
+  }
+  h1,h2,h3{
+    font-family:'Source Serif 4',serif;
+    font-weight:600;
+    color:var(--ink);
+    margin:0 0 4px 0;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- Başlık ---------- */
+  header.app-header{
+    padding:28px 20px 16px 20px;
+    max-width:960px;
+    margin:0 auto;
+  }
+  header.app-header .title-row{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  header.app-header h1{font-size:1.7rem; letter-spacing:-0.01em;}
+  header.app-header .tagline{color:var(--ink-soft); font-size:0.92rem;}
+
+  /* ---------- Sekmeler ---------- */
+  nav.tabs{
+    position:sticky; top:0; z-index:20;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+    padding:0 20px;
+  }
+  nav.tabs .tabs-inner{
+    max-width:960px; margin:0 auto;
+    display:flex; gap:4px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  nav.tabs .tabs-inner::-webkit-scrollbar{display:none;}
+  nav.tabs button{
+    border:none; background:none;
+    padding:12px 14px 10px 14px;
+    font-size:0.92rem;
+    color:var(--ink-soft);
+    cursor:pointer;
+    white-space:nowrap;
+    border-bottom:2px solid transparent;
+    transition:color .15s, border-color .15s;
+  }
+  nav.tabs button:hover{color:var(--ink);}
+  nav.tabs button.active{color:var(--green); border-bottom-color:var(--green); font-weight:600;}
+
+  main{
+    max-width:960px;
+    margin:0 auto;
+    padding:20px;
+  }
+  .view{display:none;}
+  .view.active{display:block; animation:fadein .2s ease;}
+  @keyframes fadein{from{opacity:0} to{opacity:1}}
+
+  /* ---------- Kartlar ---------- */
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow:var(--shadow);
+  }
+  .card + .card{margin-top:14px;}
+  .section-title{
+    font-size:1.05rem;
+    margin-bottom:12px;
+  }
+  .section-sub{
+    color:var(--ink-soft);
+    font-size:0.85rem;
+    margin-top:-6px;
+    margin-bottom:14px;
+  }
+
+  /* ---------- Panel özet kutuları ---------- */
+  .hero-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    margin-bottom:14px;
+  }
+  @media(max-width:720px){ .hero-grid{grid-template-columns:repeat(2,1fr);} }
+  .hero-stat{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+  .hero-stat .label{font-size:0.8rem; color:var(--ink-soft);}
+  .hero-stat .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:1.9rem;
+    font-weight:600;
+    color:var(--green);
+    margin-top:4px;
+  }
+  .hero-stat.streak .value{color:var(--gold);}
+
+  .motivation{
+    background:var(--green-dim);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    font-size:0.95rem;
+    color:var(--ink);
+    margin-bottom:14px;
+  }
+
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+  }
+  @media(max-width:720px){ .stat-row{grid-template-columns:repeat(2,1fr);} }
+  .stat-mini{
+    padding:12px 14px;
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+  }
+  .stat-mini .label{font-size:0.75rem; color:var(--ink-soft);}
+  .stat-mini .value{font-family:'IBM Plex Mono',monospace; font-size:1.2rem; font-weight:600;}
+
+  /* ---------- Formlar ---------- */
+  label{display:block; font-size:0.83rem; color:var(--ink-soft); margin-bottom:4px;}
+  input, select, textarea{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:var(--white);
+    color:var(--ink);
+    font-size:0.95rem;
+    font-family:inherit;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--green);
+    outline-offset:1px;
+  }
+  .form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  @media(max-width:600px){ .form-grid{grid-template-columns:1fr;} }
+  .form-field{margin-bottom:12px;}
+  .field-help{font-size:0.78rem; color:var(--ink-soft); margin-top:3px;}
+  .field-error{font-size:0.8rem; color:var(--clay); margin-top:4px;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:9px 16px;
+    border-radius:7px;
+    border:1px solid var(--green);
+    background:var(--green);
+    color:var(--white);
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:opacity .15s;
+  }
+  .btn:hover{opacity:0.88;}
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+    border-color:var(--line);
+    font-weight:500;
+  }
+  .btn.danger{
+    background:var(--clay);
+    border-color:var(--clay);
+  }
+  .btn.small{padding:6px 11px; font-size:0.8rem;}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .btn-row{display:flex; gap:8px; flex-wrap:wrap;}
+
+  /* ---------- Kitap kartları ---------- */
+  .book-list{display:flex; flex-direction:column; gap:12px;}
+  .book-card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+  .book-card-top{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;
+  }
+  .book-title{font-family:'Source Serif 4',serif; font-weight:600; font-size:1.15rem;}
+  .book-author{color:var(--ink-soft); font-size:0.88rem;}
+  .status-pill{
+    font-size:0.72rem;
+    padding:3px 9px;
+    border-radius:20px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .status-Reading{background:var(--gold-dim); color:var(--gold);}
+  .status-Completed{background:var(--green-dim); color:var(--green);}
+  .status-NotStarted{background:#e9e6dc; color:var(--ink-soft);}
+  .progress-track{
+    height:8px; background:var(--line); border-radius:6px; overflow:hidden; margin:10px 0;
+  }
+  .progress-fill{height:100%; background:var(--green); border-radius:6px; transition:width .3s;}
+  .book-stats{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px; font-size:0.82rem; margin-top:8px;
+  }
+  @media(max-width:600px){ .book-stats{grid-template-columns:repeat(2,1fr);} }
+  .book-stats div span{display:block; color:var(--ink-soft); font-size:0.72rem;}
+  .book-stats div b{font-family:'IBM Plex Mono',monospace; font-weight:600;}
+  .book-notes{font-size:0.85rem; color:var(--ink-soft); margin-top:8px; font-style:italic;}
+
+  /* ---------- Tablolar / kayıt listesi ---------- */
+  table{width:100%; border-collapse:collapse; font-size:0.88rem;}
+  th,td{text-align:left; padding:8px 6px; border-bottom:1px solid var(--line);}
+  th{color:var(--ink-soft); font-weight:600; font-size:0.78rem;}
+  tr:last-child td{border-bottom:none;}
+  .row-actions{display:flex; gap:6px;}
+  .empty-state{
+    color:var(--ink-soft);
+    font-size:0.9rem;
+    padding:20px 0;
+    text-align:center;
+  }
+
+  /* ---------- Takvim / geçmiş ---------- */
+  .cal-controls{display:flex; gap:10px; align-items:flex-end; margin-bottom:14px; flex-wrap:wrap;}
+  .cal-controls .form-field{margin-bottom:0; min-width:140px;}
+  .cal-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+  }
+  .cal-dow{font-size:0.72rem; color:var(--ink-soft); text-align:center; padding-bottom:4px;}
+  .cal-cell{
+    aspect-ratio:1/1;
+    border-radius:8px;
+    border:1px solid var(--line);
+    padding:6px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    font-size:0.72rem;
+    min-height:56px;
+    background:var(--white);
+  }
+  .cal-cell.empty{border:none; background:transparent;}
+  .cal-cell .daynum{color:var(--ink-soft); font-weight:600;}
+  .cal-cell .pages{font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:0.85rem;}
+  .cal-cell.lvl-none{background:var(--white);}
+  .cal-cell.lvl-low{background:#e9f0e7;}
+  .cal-cell.lvl-normal{background:#c9dcc4;}
+  .cal-cell.lvl-high{background:var(--green); color:var(--white);}
+  .cal-cell.lvl-high .daynum, .cal-cell.lvl-high .pages{color:var(--white);}
+  .cal-legend{display:flex; gap:14px; margin-top:12px; font-size:0.76rem; color:var(--ink-soft); flex-wrap:wrap;}
+  .legend-swatch{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:middle;}
+
+  /* ---------- Çubuk grafik ---------- */
+  .bar-chart{
+    display:flex; align-items:flex-end; gap:6px;
+    height:150px;
+    padding-top:10px;
+  }
+  .bar-chart .bar-col{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-end;
+    height:100%;
+    gap:4px;
+  }
+  .bar-chart .bar{
+    width:100%;
+    max-width:34px;
+    background:var(--green);
+    border-radius:4px 4px 0 0;
+    min-height:2px;
+    transition:height .3s;
+  }
+  .bar-chart .bar.zero{background:var(--line);}
+  .bar-chart .bar-label{font-size:0.68rem; color:var(--ink-soft); text-align:center;}
+  .bar-chart .bar-value{font-size:0.68rem; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft);}
+
+  /* ---------- Ayarlar ---------- */
+  .settings-item{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    padding:14px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;
+  }
+  .settings-item:last-child{border-bottom:none;}
+  .settings-item .desc{font-size:0.85rem; color:var(--ink-soft); max-width:60%;}
+  @media(max-width:600px){ .settings-item .desc{max-width:100%;} }
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--white);
+    padding:10px 18px; border-radius:8px; font-size:0.88rem;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    z-index:100; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(38,36,31,0.4);
+    display:none; align-items:center; justify-content:center; z-index:200; padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--white); border-radius:var(--radius);
+    padding:22px; max-width:420px; width:100%;
+    box-shadow:0 12px 30px rgba(0,0,0,0.2);
+  }
+  .modal h3{margin-bottom:8px;}
+  .modal p{font-size:0.9rem; color:var(--ink-soft); margin-bottom:16px;}
+
+  .storage-banner{
+    background:var(--clay-dim);
+    border:1px solid var(--clay);
+    color:var(--ink);
+    padding:14px 16px;
+    border-radius:var(--radius);
+    font-size:0.86rem;
+    margin-bottom:16px;
+    line-height:1.5;
+  }
+  .storage-banner strong{color:var(--clay);}
+
+  .subhead{font-size:0.95rem; margin:20px 0 10px 0; font-family:'Source Serif 4',serif; font-weight:600;}
+  .subhead:first-child{margin-top:0;}
+  .checkbox-row{display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--ink-soft);}
+  .checkbox-row input{width:auto;}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="title-row">
+    <h1>Defter</h1>
+    <span class="tagline">kişisel okuma günlüğün</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tabs-inner" id="tabsInner">
+    <button data-tab="dashboard" class="active">Panel</button>
+    <button data-tab="add">Okuma Ekle</button>
+    <button data-tab="books">Kitaplar</button>
+    <button data-tab="history">Geçmiş</button>
+    <button data-tab="stats">İstatistikler</button>
+    <button data-tab="settings">Ayarlar</button>
+  </div>
+</nav>
+
+<main>
+
+  <div class="storage-banner" id="storageBanner" style="display:none;">
+    <strong>Veriler kalıcı olarak kaydedilemiyor.</strong> Bu genelde dosyanın bir e-posta eki, WhatsApp/Telegram önizlemesi veya "Dosyalar" uygulaması içindeki hızlı bakış gibi bir <em>önizleyicide</em> açılmasından kaynaklanır — bu tür önizleyiciler yerel depolamayı tamamen engeller. <strong>Çözüm:</strong> dosyayı cihazına indir, sonra dosya simgesine dokunup "Birlikte aç → Chrome / Safari / Edge" gibi tam bir tarayıcı seç. O zaman kayıtlar kalıcı olacaktır. Bu arada girdiğin veriler yalnızca bu sekmeyi kapatana kadar hafızada tutulur — kapatmadan önce Ayarlar sekmesinden <strong>Verileri Dışa Aktar</strong>'ı kullanmayı unutma.
+  </div>
+
+  <!-- PANEL -->
+  <section class="view active" id="view-dashboard">
+    <div class="hero-grid" id="heroGrid"></div>
+    <div class="motivation" id="motivationBox"></div>
+    <div class="card">
+      <div class="section-title">Bu haftaya genel bakış</div>
+      <div id="dashWeekChart"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Genel</div>
+      <div class="stat-row" id="overallStats"></div>
+    </div>
+  </section>
+
+  <!-- OKUMA EKLE -->
+  <section class="view" id="view-add">
+    <div class="card">
+      <div class="section-title" id="addFormTitle">Bugünkü okumanı kaydet</div>
+      <form id="readingForm">
+        <input type="hidden" id="editingRecordId">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="rDate">Tarih</label>
+            <input type="date" id="rDate" required>
+          </div>
+          <div class="form-field">
+            <label for="rBook">Kitap</label>
+            <select id="rBook" required></select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="rStartPage">Başlangıç sayfası (isteğe bağlı)</label>
+            <input type="number" id="rStartPage" min="0" placeholder="örn. 40">
+          </div>
+          <div class="form-field">
+            <label for="rEndPage">Bitiş sayfası (isteğe bağlı)</label>
+            <input type="number" id="rEndPage" min="0" placeholder="örn. 65">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="rPages">Okunan sayfa</label>
+          <input type="number" id="rPages" min="1" placeholder="örn. 25">
+          <div class="field-help">Başlangıç/bitiş sayfasından otomatik hesaplanır, ya da doğrudan girebilirsin.</div>
+        </div>
+        <div class="form-field" id="overageWarning" style="display:none;">
+          <div class="checkbox-row">
+            <input type="checkbox" id="rAllowOverage">
+            <label for="rAllowOverage" style="margin:0;">Yine de kaydet — kitabın toplam sayfa sayısını aşıyor</label>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="rNote">Not (isteğe bağlı)</label>
+          <input type="text" id="rNote" placeholder="örn. 4. bölüm, trende">
+        </div>
+        <div id="formError" class="field-error" style="display:none;"></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Kaydı kaydet</button>
+          <button type="button" class="btn secondary" id="cancelEditBtn" style="display:none;">Düzenlemeyi iptal et</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Son kayıtlar</div>
+      <div id="recentEntries"></div>
+    </div>
+  </section>
+
+  <!-- KİTAPLAR -->
+  <section class="view" id="view-books">
+    <div class="card">
+      <div class="section-title" id="bookFormTitle">Kitap ekle</div>
+      <form id="bookForm">
+        <input type="hidden" id="editingBookId">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="bTitle">Başlık</label>
+            <input type="text" id="bTitle" required placeholder="örn. Suç ve Ceza">
+          </div>
+          <div class="form-field">
+            <label for="bAuthor">Yazar</label>
+            <input type="text" id="bAuthor" placeholder="örn. Dostoyevski">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="bPages">Toplam sayfa</label>
+            <input type="number" id="bPages" min="1" required placeholder="örn. 480">
+          </div>
+          <div class="form-field">
+            <label for="bStart">Başlangıç tarihi (isteğe bağlı)</label>
+            <input type="date" id="bStart">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="bNotes">Notlar (isteğe bağlı)</label>
+          <textarea id="bNotes" rows="2" placeholder="Bu kitapla ilgili aklında kalmasını istediğin bir şey"></textarea>
+        </div>
+        <div id="bookFormError" class="field-error" style="display:none;"></div>
+        <div class="btn-row">
+          <button type="submit" class="btn">Kitabı kaydet</button>
+          <button type="button" class="btn secondary" id="cancelBookEditBtn" style="display:none;">Düzenlemeyi iptal et</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Kitapların</div>
+      <div class="book-list" id="bookList"></div>
+    </div>
+  </section>
+
+  <!-- GEÇMİŞ -->
+  <section class="view" id="view-history">
+    <div class="card">
+      <div class="section-title">Günlük geçmiş</div>
+      <div class="cal-controls">
+        <div class="form-field">
+          <label for="histMonth">Ay</label>
+          <select id="histMonth"></select>
+        </div>
+        <div class="form-field">
+          <label for="histYear">Yıl</label>
+          <select id="histYear"></select>
+        </div>
+      </div>
+      <div class="cal-grid" id="histCalGrid"></div>
+      <div class="cal-legend">
+        <span><span class="legend-swatch" style="background:var(--white); border:1px solid var(--line);"></span>Okuma yok</span>
+        <span><span class="legend-swatch" style="background:#e9f0e7;"></span>Az</span>
+        <span><span class="legend-swatch" style="background:#c9dcc4;"></span>Normal</span>
+        <span><span class="legend-swatch" style="background:var(--green);"></span>Yoğun</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- İSTATİSTİKLER -->
+  <section class="view" id="view-stats">
+    <div class="card">
+      <div class="section-title">Bu hafta</div>
+      <div id="weekStatsChart"></div>
+      <div class="stat-row" id="weekStatsRow" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Aylık</div>
+      <div class="cal-controls">
+        <div class="form-field">
+          <label for="statMonth">Ay</label>
+          <select id="statMonth"></select>
+        </div>
+        <div class="form-field">
+          <label for="statYear">Yıl</label>
+          <select id="statYear"></select>
+        </div>
+      </div>
+      <div id="monthStatsChart"></div>
+      <div class="stat-row" id="monthStatsRow" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Yıllık genel bakış</div>
+      <div class="cal-controls">
+        <div class="form-field">
+          <label for="yearOnlySelect">Yıl</label>
+          <select id="yearOnlySelect"></select>
+        </div>
+      </div>
+      <div id="yearChart"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Kitap istatistikleri</div>
+      <div id="bookStatsTable"></div>
+    </div>
+  </section>
+
+  <!-- AYARLAR -->
+  <section class="view" id="view-settings">
+    <div class="card">
+      <div class="section-title">Verilerin</div>
+      <div class="settings-item">
+        <div>
+          <div><strong>Verileri dışa aktar</strong></div>
+          <div class="desc">Tüm kitap ve okuma kayıtlarını, yedekleme veya başka bir cihaza taşıma amacıyla JSON dosyası olarak indir.</div>
+        </div>
+        <button class="btn secondary" id="exportBtn">Verileri dışa aktar</button>
+      </div>
+      <div class="settings-item">
+        <div>
+          <div><strong>Verileri içe aktar</strong></div>
+          <div class="desc">Daha önce dışa aktarılmış bir JSON dosyasından kitapları ve okuma kayıtlarını geri yükle. Bu, mevcut verilerinin yerini alır.</div>
+        </div>
+        <div>
+          <input type="file" id="importFile" accept="application/json" style="display:none;">
+          <button class="btn secondary" id="importBtn">Verileri içe aktar</button>
+        </div>
+      </div>
+      <div class="settings-item">
+        <div>
+          <div><strong>Tüm verileri sil</strong></div>
+          <div class="desc">Bu tarayıcıdaki tüm kitap ve okuma kayıtlarını kalıcı olarak sil. Bu işlem geri alınamaz.</div>
+        </div>
+        <button class="btn danger" id="deleteAllBtn">Tüm verileri sil</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Bu defter hakkında</div>
+      <p style="font-size:0.88rem; color:var(--ink-soft);">Bu uygulamayı Claude içinde kullanıyorsan verilerin, Claude'un kalıcı depolama sistemine kaydedilir ve oturumlar arasında korunur. Dosyayı indirip kendi başına bir tarayıcıda açarsan verilerin yalnızca o tarayıcının yerel deposunda tutulur. Her iki durumda da ara sıra yedek almayı unutma.</p>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal">
+    <h3 id="confirmTitle">Emin misin?</h3>
+    <p id="confirmBody"></p>
+    <div class="btn-row">
+      <button class="btn danger" id="confirmYesBtn">Evet, devam et</button>
+      <button class="btn secondary" id="confirmNoBtn">İptal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     VERİ KATMANI
+     Tek bir nesne olarak STORAGE_KEY altında localStorage'da saklanır.
+     { version, books:[...], records:[...] }
+     Kitap:  { id, title, author, totalPages, startDate, notes, createdAt }
+     Kayıt:  { id, bookId, date (YYYY-MM-DD), pagesRead, startPage, endPage, note, createdAt, updatedAt }
+     Durum ("Reading" / "Completed" / "Not Started") her zaman türetilir,
+     hiç saklanmaz — böylece düzenlemelerden sonra asla eskimiş olmaz.
+  ========================================================= */
+  const STORAGE_KEY = "readingLedgerData_v1";
+
+  const STATUS_TR = {
+    "Reading": "Okunuyor",
+    "Completed": "Tamamlandı",
+    "Not Started": "Başlanmadı"
+  };
+
+  function defaultData(){
+    return { version: 1, books: [], records: [] };
+  }
+
+  // Claude artifact ortamında window.storage kalıcıdır; bu yoksa (dosya
+  // doğrudan bir tarayıcıda açıldıysa) localStorage'a geri dön.
+  const hasCloudStorage = (typeof window !== 'undefined') && !!window.storage
+    && typeof window.storage.get === 'function' && typeof window.storage.set === 'function';
+
+  // Hangi depolama arka ucunun gerçekten çalıştığını tutar: 'cloud', 'local' ya da 'none'.
+  // Claude'un kendi depolaması bazı önizleme ortamlarında beklenmedik şekilde
+  // hata verebiliyor (ör. "Unexpected response type"); bu durumda sessizce
+  // tarayıcının localStorage'ına düşüyoruz, sadece o da çalışmazsa kullanıcıyı uyarıyoruz.
+  let storageBackend = 'none';
+
+  async function testCloudStorage(){
+    if(!hasCloudStorage) return false;
+    try{
+      const testKey = "__ledger_storage_test__";
+      await window.storage.set(testKey, "1", false);
+      const r = await window.storage.get(testKey, false);
+      window.storage.delete(testKey, false).catch(()=>{});
+      return !!(r && r.value === "1");
+    }catch(e){
+      console.warn("Bulut depolama kullanılamıyor, yerel depolamaya geçiliyor:", e);
+      return false;
+    }
+  }
+
+  function testLocalStorage(){
+    try{
+      const testKey = "__ledger_storage_test__";
+      localStorage.setItem(testKey, "1");
+      const v = localStorage.getItem(testKey);
+      localStorage.removeItem(testKey);
+      return v === "1";
+    }catch(e){
+      console.warn("Yerel depolama (localStorage) kullanılamıyor:", e);
+      return false;
+    }
+  }
+
+  async function detectStorageBackend(){
+    if(await testCloudStorage()) return 'cloud';
+    if(testLocalStorage()) return 'local';
+    return 'none';
+  }
+
+  async function loadData(){
+    try{
+      if(storageBackend === 'cloud'){
+        let result = null;
+        try{ result = await window.storage.get(STORAGE_KEY, false); }
+        catch(e){ result = null; } // anahtar yoksa fırlatabilir — "veri yok" demektir
+        if(!result || !result.value) return defaultData();
+        const parsed = JSON.parse(result.value);
+        if(!parsed || !Array.isArray(parsed.books) || !Array.isArray(parsed.records)) return defaultData();
+        return parsed;
+      } else if(storageBackend === 'local'){
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return defaultData();
+        const parsed = JSON.parse(raw);
+        if(!parsed || !Array.isArray(parsed.books) || !Array.isArray(parsed.records)) return defaultData();
+        return parsed;
+      } else {
+        return defaultData();
+      }
+    }catch(e){
+      console.error("Defter verisi yüklenemedi:", e);
+      return defaultData();
+    }
+  }
+
+  async function saveData(){
+    if(storageBackend === 'cloud'){
+      try{
+        const result = await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+        if(!result) throw new Error('Bulut depolama boş yanıt döndürdü.');
+        return;
+      }catch(e){
+        console.error("Bulut depolamaya kayıt başarısız, yerel depolamaya deneniyor:", e);
+        // Tek seferlik otomatik düşüş: bundan sonra doğrudan localStorage kullan.
+        if(testLocalStorage()){
+          storageBackend = 'local';
+          try{
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            showToast("Bu ortamda kalıcı depolama sorunlu, kayıtların artık bu cihazda tutulacak.");
+            return;
+          }catch(e2){ /* aşağıya düş */ }
+        }
+        storageBackend = 'none';
+        showToast("Kaydedilemedi — bu ortam hiçbir depolama yöntemini desteklemiyor.");
+        document.getElementById('storageBanner').style.display = 'block';
+        return;
+      }
+    }
+    if(storageBackend === 'local'){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }catch(e){
+        console.error("Defter verisi kaydedilemedi:", e);
+        storageBackend = 'none';
+        showToast("Kaydedilemedi — bu ortam yerel depolamayı engelliyor.");
+        document.getElementById('storageBanner').style.display = 'block';
+      }
+      return;
+    }
+    // storageBackend === 'none'
+    showToast("Kaydedilemedi — bu ortam hiçbir depolama yöntemini desteklemiyor.");
+    document.getElementById('storageBanner').style.display = 'block';
+  }
+
+  let state = defaultData();
+
+  function uid(){
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  }
+
+  /* =========================================================
+     TARİH YARDIMCILARI
+  ========================================================= */
+  function todayStr(){
+    return toDateStr(new Date());
+  }
+  function toDateStr(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function parseDateStr(s){
+    // Yerel saat diliminde ayrıştır (UTC kaymalarını önlemek için)
+    const [y,m,d] = s.split('-').map(Number);
+    return new Date(y, m-1, d);
+  }
+  function isValidDateStr(s){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    const d = parseDateStr(s);
+    return toDateStr(d) === s;
+  }
+  function addDays(d, n){
+    const nd = new Date(d);
+    nd.setDate(nd.getDate()+n);
+    return nd;
+  }
+  function daysBetween(a,b){
+    const MS = 24*60*60*1000;
+    return Math.round((b - a) / MS);
+  }
+  function startOfWeek(d){
+    // Hafta Pazartesi başlar
+    const nd = new Date(d);
+    const day = nd.getDay(); // 0 Paz .. 6 Cmt
+    const diff = (day === 0 ? -6 : 1 - day);
+    nd.setDate(nd.getDate()+diff);
+    nd.setHours(0,0,0,0);
+    return nd;
+  }
+  function daysInMonth(year, monthIdx){
+    return new Date(year, monthIdx+1, 0).getDate();
+  }
+  const MONTH_NAMES = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  const DOW_LABELS = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+
+  function formatNice(dateStr){
+    const d = parseDateStr(dateStr);
+    return d.toLocaleDateString('tr-TR', {month:'short', day:'numeric', year:'numeric'});
+  }
+
+  /* =========================================================
+     TEMEL HESAPLAMALAR
+  ========================================================= */
+
+  // dateStr -> o gün okunan toplam sayfa (tüm kitaplar birlikte)
+  function getDailyTotals(){
+    const map = {};
+    state.records.forEach(r=>{
+      map[r.date] = (map[r.date]||0) + r.pagesRead;
+    });
+    return map;
+  }
+
+  function sumPagesInRange(startDate, endDate){
+    // dahil aralık, Date nesneleri
+    let total = 0;
+    state.records.forEach(r=>{
+      const d = parseDateStr(r.date);
+      if(d >= startDate && d <= endDate) total += r.pagesRead;
+    });
+    return total;
+  }
+
+  function totalPagesEver(){
+    return state.records.reduce((sum,r)=>sum+r.pagesRead,0);
+  }
+
+  function getBookTotalPagesRead(bookId){
+    return state.records.filter(r=>r.bookId===bookId).reduce((s,r)=>s+r.pagesRead,0);
+  }
+
+  function getBookReadingDays(bookId){
+    const days = new Set();
+    state.records.filter(r=>r.bookId===bookId).forEach(r=>days.add(r.date));
+    return days.size;
+  }
+
+  function getBookStatus(book){
+    const read = getBookTotalPagesRead(book.id);
+    if(read <= 0) return "Not Started";
+    if(read >= book.totalPages) return "Completed";
+    return "Reading";
+  }
+
+  function statusClass(status){
+    return "status-" + status.replace(/\s+/g,'');
+  }
+
+  // Akışlar (streak), günlük toplamlar haritasından hesaplanır.
+  function computeStreaks(){
+    const dailyTotals = getDailyTotals();
+    const readingDays = Object.keys(dailyTotals).filter(d=>dailyTotals[d] > 0).sort();
+    if(readingDays.length === 0){
+      return { current: 0, longest: 0, totalReadingDays: 0 };
+    }
+    const daySet = new Set(readingDays);
+    let longest = 0, run = 0;
+    let prev = null;
+    readingDays.forEach(dStr=>{
+      const d = parseDateStr(dStr);
+      if(prev !== null && daysBetween(prev, d) === 1){
+        run += 1;
+      } else {
+        run = 1;
+      }
+      longest = Math.max(longest, run);
+      prev = d;
+    });
+
+    // Güncel akış: bugünden (ya da bugün hiç okunmadıysa dünden) geriye doğru say
+    let current = 0;
+    let cursor = parseDateStr(todayStr());
+    if(!daySet.has(toDateStr(cursor))){
+      cursor = addDays(cursor, -1);
+    }
+    while(daySet.has(toDateStr(cursor))){
+      current += 1;
+      cursor = addDays(cursor, -1);
+    }
+
+    return { current, longest, totalReadingDays: readingDays.length };
+  }
+
+  function estimateCompletionDate(book){
+    const readingDays = getBookReadingDays(book.id);
+    const totalRead = getBookTotalPagesRead(book.id);
+    const remaining = book.totalPages - totalRead;
+    if(remaining <= 0) return null; // zaten bitmiş
+    if(readingDays === 0) return "Henüz yeterli veri yok";
+
+    // Hız = okuma günü başına sayfa, kitabın kendi okuma sıklığına göre yansıtılır.
+    const bookRecords = state.records.filter(r=>r.bookId===book.id);
+    const dates = bookRecords.map(r=>parseDateStr(r.date)).sort((a,b)=>a-b);
+    const first = dates[0];
+    const last = dates[dates.length-1];
+    const calendarSpan = Math.max(1, daysBetween(first, last) + 1);
+    const frequency = readingDays / calendarSpan; // takvim günü başına okuma günü
+    const avgPagesPerReadingDay = totalRead / readingDays;
+    if(avgPagesPerReadingDay <= 0) return "Henüz yeterli veri yok";
+
+    const readingDaysNeeded = remaining / avgPagesPerReadingDay;
+    const calendarDaysNeeded = frequency > 0 ? Math.ceil(readingDaysNeeded / frequency) : Math.ceil(readingDaysNeeded);
+    const est = addDays(new Date(), calendarDaysNeeded);
+    return est.toLocaleDateString('tr-TR',{month:'short', day:'numeric', year:'numeric'});
+  }
+
+  /* =========================================================
+     ARAYÜZ YARDIMCILARI
+  ========================================================= */
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  function confirmDialog(title, body){
+    return new Promise(resolve=>{
+      const overlay = document.getElementById('confirmOverlay');
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmBody').textContent = body;
+      overlay.classList.add('show');
+      const yesBtn = document.getElementById('confirmYesBtn');
+      const noBtn = document.getElementById('confirmNoBtn');
+      function cleanup(result){
+        overlay.classList.remove('show');
+        yesBtn.removeEventListener('click', onYes);
+        noBtn.removeEventListener('click', onNo);
+        resolve(result);
+      }
+      function onYes(){ cleanup(true); }
+      function onNo(){ cleanup(false); }
+      yesBtn.addEventListener('click', onYes);
+      noBtn.addEventListener('click', onNo);
+    });
+  }
+
+  function el(tag, attrs, children){
+    const e = document.createElement(tag);
+    if(attrs) Object.keys(attrs).forEach(k=>{
+      if(k === 'class') e.className = attrs[k];
+      else if(k === 'html') e.innerHTML = attrs[k];
+      else e.setAttribute(k, attrs[k]);
+    });
+    (children||[]).forEach(c=>{ if(c) e.appendChild(c); });
+    return e;
+  }
+  function text(tag, className, str){
+    const e = document.createElement(tag);
+    if(className) e.className = className;
+    e.textContent = str;
+    return e;
+  }
+
+  function levelForPages(pages){
+    if(pages <= 0) return 'none';
+    if(pages < 20) return 'low';
+    if(pages < 50) return 'normal';
+    return 'high';
+  }
+
+  /* =========================================================
+     GEZİNME
+  ========================================================= */
+  document.getElementById('tabsInner').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-tab]');
+    if(!btn) return;
+    switchTab(btn.dataset.tab);
+  });
+
+  function switchTab(tabId){
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tabId));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+tabId).classList.add('active');
+    renderAll();
+  }
+
+  /* =========================================================
+     ÇUBUK GRAFİK OLUŞTURUCU (genel amaçlı)
+  ========================================================= */
+  function renderBarChart(container, labels, values){
+    container.innerHTML = '';
+    const chart = el('div', {class:'bar-chart'});
+    const max = Math.max(1, ...values);
+    labels.forEach((label, i)=>{
+      const v = values[i] || 0;
+      const pct = Math.round((v / max) * 100);
+      const col = el('div', {class:'bar-col'});
+      col.appendChild(text('div','bar-value', v>0? String(v) : ''));
+      const bar = el('div', {class:'bar' + (v===0?' zero':'')});
+      bar.style.height = (v===0 ? '2px' : Math.max(pct,4) + '%');
+      col.appendChild(bar);
+      col.appendChild(text('div','bar-label', label));
+      chart.appendChild(col);
+    });
+    container.appendChild(chart);
+  }
+
+  /* =========================================================
+     ÇİZİM: PANEL
+  ========================================================= */
+  function renderDashboard(){
+    const dailyTotals = getDailyTotals();
+    const today = todayStr();
+    const pagesToday = dailyTotals[today] || 0;
+
+    const now = new Date();
+    const wkStart = startOfWeek(now);
+    const wkEnd = addDays(wkStart, 6);
+    const pagesThisWeek = sumPagesInRange(wkStart, wkEnd);
+
+    const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const mEnd = new Date(now.getFullYear(), now.getMonth()+1, 0);
+    const pagesThisMonth = sumPagesInRange(mStart, mEnd);
+
+    const streaks = computeStreaks();
+
+    const heroGrid = document.getElementById('heroGrid');
+    heroGrid.innerHTML = '';
+    heroGrid.appendChild(heroStat('Bugün', pagesToday + ' sayfa'));
+    heroGrid.appendChild(heroStat('Bu hafta', pagesThisWeek + ' sayfa'));
+    heroGrid.appendChild(heroStat('Bu ay', pagesThisMonth + ' sayfa'));
+    heroGrid.appendChild(heroStat('Okuma serisi', streaks.current + ' gün' + (streaks.current>0?' \u{1F525}':''), true));
+
+    document.getElementById('motivationBox').textContent = motivationalMessage(pagesToday, streaks.current);
+
+    // Hafta grafiği (bu haftanın Pzt..Paz günleri)
+    const wkLabels = [], wkValues = [];
+    for(let i=0;i<7;i++){
+      const d = addDays(wkStart, i);
+      wkLabels.push(DOW_LABELS[i]);
+      wkValues.push(dailyTotals[toDateStr(d)] || 0);
+    }
+    renderBarChart(document.getElementById('dashWeekChart'), wkLabels, wkValues);
+
+    // Genel istatistikler
+    const booksCompleted = state.books.filter(b=>getBookStatus(b)==='Completed').length;
+    const booksReading = state.books.filter(b=>getBookStatus(b)==='Reading').length;
+    const overall = document.getElementById('overallStats');
+    overall.innerHTML = '';
+    overall.appendChild(statMini('Toplam okunan sayfa', totalPagesEver()));
+    overall.appendChild(statMini('En uzun seri', streaks.longest + ' gün'));
+    overall.appendChild(statMini('Tamamlanan kitap', booksCompleted));
+    overall.appendChild(statMini('Devam eden kitap', booksReading));
+  }
+
+  function heroStat(label, value, isStreak){
+    return el('div', {class:'hero-stat' + (isStreak?' streak':'')}, [
+      text('div','label',label),
+      text('div','value',value)
+    ]);
+  }
+  function statMini(label, value){
+    return el('div', {class:'stat-mini'}, [
+      text('div','label',label),
+      text('div','value',String(value))
+    ]);
+  }
+
+  function motivationalMessage(pagesToday, currentStreak){
+    if(pagesToday === 0){
+      return currentStreak > 0
+        ? "Bugün henüz okumadın — " + currentStreak + " günlük seriyi sürdür."
+        : "Bugün henüz okumadın.";
+    }
+    if(pagesToday < 15) return "İyi başlangıç. Devam et.";
+    if(pagesToday < 40) return "Güzel bir okuma günü.";
+    return "Harika bir okuma günü.";
+  }
+
+  /* =========================================================
+     ÇİZİM: OKUMA EKLE
+  ========================================================= */
+  function populateBookSelect(selectEl, selectedId){
+    selectEl.innerHTML = '';
+    if(state.books.length === 0){
+      selectEl.appendChild(el('option', {value:''}, [document.createTextNode('Önce bir kitap ekle')]));
+      return;
+    }
+    state.books.forEach(b=>{
+      const opt = el('option', {value:b.id}, [document.createTextNode(b.title + (b.author? ' — '+b.author : ''))]);
+      if(b.id === selectedId) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+  }
+
+  function renderAddReading(){
+    populateBookSelect(document.getElementById('rBook'));
+    if(!document.getElementById('editingRecordId').value){
+      document.getElementById('rDate').value = todayStr();
+    }
+    renderRecentEntries();
+  }
+
+  function renderRecentEntries(){
+    const container = document.getElementById('recentEntries');
+    container.innerHTML = '';
+    const sorted = [...state.records].sort((a,b)=> b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+    if(sorted.length === 0){
+      container.appendChild(text('div','empty-state','Henüz okuma kaydı yok. Yukarıdan ilk kaydını ekle.'));
+      return;
+    }
+    const tbl = el('table');
+    const thead = el('thead', {}, [el('tr', {}, [
+      text('th','', 'Tarih'), text('th','','Kitap'), text('th','','Sayfa'), text('th','','Not'), text('th','','')
+    ])]);
+    tbl.appendChild(thead);
+    const tbody = el('tbody');
+    sorted.slice(0,50).forEach(r=>{
+      const book = state.books.find(b=>b.id===r.bookId);
+      const tr = el('tr');
+      tr.appendChild(text('td','',formatNice(r.date)));
+      tr.appendChild(text('td','', book ? book.title : '(silinmiş kitap)'));
+      tr.appendChild(text('td','mono', String(r.pagesRead)));
+      tr.appendChild(text('td','', r.note || ''));
+      const actions = el('td');
+      const actionsRow = el('div',{class:'row-actions'});
+      const editBtn = el('button',{class:'btn secondary small'},[document.createTextNode('Düzenle')]);
+      editBtn.addEventListener('click', ()=>startEditRecord(r.id));
+      const delBtn = el('button',{class:'btn danger small'},[document.createTextNode('Sil')]);
+      delBtn.addEventListener('click', ()=>deleteRecord(r.id));
+      actionsRow.appendChild(editBtn);
+      actionsRow.appendChild(delBtn);
+      actions.appendChild(actionsRow);
+      tr.appendChild(actions);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    container.appendChild(tbl);
+  }
+
+  function startEditRecord(id){
+    const r = state.records.find(x=>x.id===id);
+    if(!r) return;
+    document.getElementById('editingRecordId').value = r.id;
+    document.getElementById('rDate').value = r.date;
+    populateBookSelect(document.getElementById('rBook'), r.bookId);
+    document.getElementById('rStartPage').value = r.startPage ?? '';
+    document.getElementById('rEndPage').value = r.endPage ?? '';
+    document.getElementById('rPages').value = r.pagesRead;
+    document.getElementById('rNote').value = r.note || '';
+    document.getElementById('addFormTitle').textContent = 'Okuma kaydını düzenle';
+    document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+    switchTab('add');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function resetReadingForm(){
+    document.getElementById('readingForm').reset();
+    document.getElementById('editingRecordId').value = '';
+    document.getElementById('rDate').value = todayStr();
+    document.getElementById('addFormTitle').textContent = "Bugünkü okumanı kaydet";
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    document.getElementById('overageWarning').style.display = 'none';
+    document.getElementById('rAllowOverage').checked = false;
+    document.getElementById('formError').style.display = 'none';
+  }
+
+  async function deleteRecord(id){
+    const ok = await confirmDialog('Bu kayıt silinsin mi?', 'Bu okuma kaydı kalıcı olarak silinecek.');
+    if(!ok) return;
+    state.records = state.records.filter(r=>r.id!==id);
+    saveData();
+    renderAll();
+    showToast('Kayıt silindi.');
+  }
+
+  document.getElementById('cancelEditBtn').addEventListener('click', resetReadingForm);
+
+  // başlangıç/bitiş sayfasından sayfa sayısını otomatik hesapla
+  function recalcPagesFromRange(){
+    const s = document.getElementById('rStartPage').value;
+    const en = document.getElementById('rEndPage').value;
+    if(s !== '' && en !== ''){
+      const diff = Number(en) - Number(s);
+      if(diff > 0) document.getElementById('rPages').value = diff;
+    }
+  }
+  document.getElementById('rStartPage').addEventListener('input', recalcPagesFromRange);
+  document.getElementById('rEndPage').addEventListener('input', recalcPagesFromRange);
+
+  document.getElementById('rBook').addEventListener('change', checkOverage);
+  document.getElementById('rPages').addEventListener('input', checkOverage);
+  function checkOverage(){
+    const bookId = document.getElementById('rBook').value;
+    const pages = Number(document.getElementById('rPages').value);
+    const book = state.books.find(b=>b.id===bookId);
+    const editingId = document.getElementById('editingRecordId').value;
+    if(!book || !pages){
+      document.getElementById('overageWarning').style.display = 'none';
+      return;
+    }
+    let existingTotal = getBookTotalPagesRead(book.id);
+    if(editingId){
+      const existingRecord = state.records.find(r=>r.id===editingId);
+      if(existingRecord && existingRecord.bookId === book.id) existingTotal -= existingRecord.pagesRead;
+    }
+    const willExceed = (existingTotal + pages) > book.totalPages;
+    document.getElementById('overageWarning').style.display = willExceed ? 'block' : 'none';
+    if(!willExceed) document.getElementById('rAllowOverage').checked = false;
+  }
+
+  document.getElementById('readingForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const errorBox = document.getElementById('formError');
+    errorBox.style.display = 'none';
+
+    const dateStr = document.getElementById('rDate').value;
+    const bookId = document.getElementById('rBook').value;
+    const startPage = document.getElementById('rStartPage').value;
+    const endPage = document.getElementById('rEndPage').value;
+    let pages = Number(document.getElementById('rPages').value);
+    const note = document.getElementById('rNote').value.trim();
+    const editingId = document.getElementById('editingRecordId').value;
+    const allowOverage = document.getElementById('rAllowOverage').checked;
+
+    function fail(msg){ errorBox.textContent = msg; errorBox.style.display='block'; }
+
+    if(!bookId){ return fail('Bir kitap seç — liste boşsa Kitaplar sekmesinden ekleyebilirsin.'); }
+    if(!isValidDateStr(dateStr)){ return fail('Geçerli bir tarih gir.'); }
+    if(parseDateStr(dateStr) > new Date(new Date().setHours(23,59,59,999))){ return fail('Tarih gelecekte olamaz.'); }
+
+    if(startPage !== '' && endPage !== ''){
+      const s = Number(startPage), en = Number(endPage);
+      if(s < 0 || en < 0) return fail('Sayfa numaraları negatif olamaz.');
+      if(en <= s) return fail('Bitiş sayfası başlangıç sayfasından büyük olmalı.');
+      pages = en - s;
+    }
+
+    if(!pages || pages <= 0) return fail('Sıfırdan büyük bir sayfa sayısı gir.');
+    if(!Number.isInteger(pages)) return fail('Okunan sayfa sayısı tam sayı olmalı.');
+
+    const book = state.books.find(b=>b.id===bookId);
+    if(book){
+      let existingTotal = getBookTotalPagesRead(book.id);
+      if(editingId){
+        const existingRecord = state.records.find(r=>r.id===editingId);
+        if(existingRecord && existingRecord.bookId === book.id) existingTotal -= existingRecord.pagesRead;
+      }
+      if((existingTotal + pages) > book.totalPages && !allowOverage){
+        return fail('Bu, kitabın toplam sayfa sayısını aşar. Bilerek yapıyorsan yukarıdaki kutuyu işaretle.');
+      }
+    }
+
+    if(editingId){
+      const rec = state.records.find(r=>r.id===editingId);
+      if(rec){
+        rec.date = dateStr;
+        rec.bookId = bookId;
+        rec.pagesRead = pages;
+        rec.startPage = startPage !== '' ? Number(startPage) : null;
+        rec.endPage = endPage !== '' ? Number(endPage) : null;
+        rec.note = note;
+        rec.updatedAt = Date.now();
+      }
+      showToast('Kayıt güncellendi.');
+    } else {
+      state.records.push({
+        id: uid(),
+        bookId,
+        date: dateStr,
+        pagesRead: pages,
+        startPage: startPage !== '' ? Number(startPage) : null,
+        endPage: endPage !== '' ? Number(endPage) : null,
+        note,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      showToast('Okuma kaydedildi.');
+    }
+
+    saveData();
+    resetReadingForm();
+    renderAll();
+  });
+
+  /* =========================================================
+     ÇİZİM: KİTAPLAR
+  ========================================================= */
+  function renderBooks(){
+    const list = document.getElementById('bookList');
+    list.innerHTML = '';
+    if(state.books.length === 0){
+      list.appendChild(text('div','empty-state','Henüz kitap yok. Yukarıdan ilk kitabını ekle.'));
+      return;
+    }
+    state.books.forEach(book=>{
+      const read = getBookTotalPagesRead(book.id);
+      const remaining = Math.max(0, book.totalPages - read);
+      const pct = Math.min(100, Math.round((read / book.totalPages) * 100));
+      const status = getBookStatus(book);
+      const readingDays = getBookReadingDays(book.id);
+      const avgPerDay = readingDays > 0 ? Math.round(read / readingDays) : 0;
+
+      const top = el('div', {class:'book-card-top'}, [
+        el('div', {}, [
+          text('div','book-title', book.title),
+          text('div','book-author', book.author || '')
+        ]),
+        text('span', 'status-pill ' + statusClass(status), STATUS_TR[status])
+      ]);
+
+      const progressTrack = el('div', {class:'progress-track'}, [
+        el('div', {class:'progress-fill', style:'width:'+pct+'%'})
+      ]);
+
+      const statsGrid = el('div', {class:'book-stats'}, [
+        statCell('Okunan sayfa', read),
+        statCell('Kalan', remaining),
+        statCell('İlerleme', pct + '%'),
+        statCell('Ort. / okuma günü', avgPerDay)
+      ]);
+
+      const card = el('div', {class:'book-card'});
+      card.appendChild(top);
+      card.appendChild(progressTrack);
+      card.appendChild(statsGrid);
+      if(book.startDate) card.appendChild(text('div','field-help','Başlangıç: ' + formatNice(book.startDate)));
+      if(book.notes) card.appendChild(text('div','book-notes', book.notes));
+
+      const actions = el('div', {class:'btn-row', style:'margin-top:12px;'});
+      const editBtn = el('button',{class:'btn secondary small'},[document.createTextNode('Düzenle')]);
+      editBtn.addEventListener('click', ()=>startEditBook(book.id));
+      const delBtn = el('button',{class:'btn danger small'},[document.createTextNode('Sil')]);
+      delBtn.addEventListener('click', ()=>deleteBook(book.id));
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      card.appendChild(actions);
+
+      list.appendChild(card);
+    });
+  }
+
+  function statCell(label, value){
+    return el('div', {}, [
+      text('span','',label),
+      el('b',{},[document.createTextNode(String(value))])
+    ]);
+  }
+
+  function startEditBook(id){
+    const b = state.books.find(x=>x.id===id);
+    if(!b) return;
+    document.getElementById('editingBookId').value = b.id;
+    document.getElementById('bTitle').value = b.title;
+    document.getElementById('bAuthor').value = b.author || '';
+    document.getElementById('bPages').value = b.totalPages;
+    document.getElementById('bStart').value = b.startDate || '';
+    document.getElementById('bNotes').value = b.notes || '';
+    document.getElementById('bookFormTitle').textContent = 'Kitabı düzenle';
+    document.getElementById('cancelBookEditBtn').style.display = 'inline-flex';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function resetBookForm(){
+    document.getElementById('bookForm').reset();
+    document.getElementById('editingBookId').value = '';
+    document.getElementById('bookFormTitle').textContent = 'Kitap ekle';
+    document.getElementById('cancelBookEditBtn').style.display = 'none';
+    document.getElementById('bookFormError').style.display = 'none';
+  }
+  document.getElementById('cancelBookEditBtn').addEventListener('click', resetBookForm);
+
+  async function deleteBook(id){
+    const hasRecords = state.records.some(r=>r.bookId===id);
+    const msg = hasRecords
+      ? 'Bu kitaba bağlı okuma kayıtları var. Nasıl devam edeceğini seç.'
+      : 'Bu, kitabı kalıcı olarak silecek.';
+    const ok = await confirmDialog('Bu kitap silinsin mi?', msg + ' Bu işlem geri alınamaz.');
+    if(!ok) return;
+    if(hasRecords){
+      const alsoDeleteRecords = await confirmDialog(
+        'Okuma kayıtları da silinsin mi?',
+        '"Evet, devam et"e tıklarsan bu kitaba ait tüm okuma kayıtları da silinir. İptal edersen okuma geçmişi korunur (kitap "silinmiş kitap" olarak görünür).'
+      );
+      if(alsoDeleteRecords){
+        state.records = state.records.filter(r=>r.bookId!==id);
+      }
+    }
+    state.books = state.books.filter(b=>b.id!==id);
+    saveData();
+    resetBookForm();
+    renderAll();
+    showToast('Kitap silindi.');
+  }
+
+  document.getElementById('bookForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const errorBox = document.getElementById('bookFormError');
+    errorBox.style.display = 'none';
+    function fail(msg){ errorBox.textContent = msg; errorBox.style.display = 'block'; }
+
+    const title = document.getElementById('bTitle').value.trim();
+    const author = document.getElementById('bAuthor').value.trim();
+    const totalPages = Number(document.getElementById('bPages').value);
+    const startDate = document.getElementById('bStart').value;
+    const notes = document.getElementById('bNotes').value.trim();
+    const editingId = document.getElementById('editingBookId').value;
+
+    if(!title) return fail('Kitaba bir başlık ver.');
+    if(!totalPages || totalPages <= 0) return fail('Toplam sayfa sayısı pozitif bir sayı olmalı.');
+    if(startDate && !isValidDateStr(startDate)) return fail('Başlangıç tarihi geçersiz.');
+
+    if(editingId){
+      const book = state.books.find(b=>b.id===editingId);
+      if(book){
+        book.title = title;
+        book.author = author;
+        book.totalPages = totalPages;
+        book.startDate = startDate || null;
+        book.notes = notes;
+      }
+      showToast('Kitap güncellendi.');
+    } else {
+      state.books.push({
+        id: uid(),
+        title, author, totalPages,
+        startDate: startDate || null,
+        notes,
+        createdAt: Date.now()
+      });
+      showToast('Kitap eklendi.');
+    }
+    saveData();
+    resetBookForm();
+    renderAll();
+  });
+
+  /* =========================================================
+     ÇİZİM: GEÇMİŞ (takvim)
+  ========================================================= */
+  function populateMonthYearSelects(monthSel, yearSel, currentMonth, currentYear){
+    if(monthSel.options.length === 0){
+      MONTH_NAMES.forEach((m,i)=>monthSel.appendChild(el('option',{value:i},[document.createTextNode(m)])));
+    }
+    monthSel.value = currentMonth;
+
+    if(yearSel.options.length === 0){
+      const thisYear = new Date().getFullYear();
+      const years = new Set([thisYear]);
+      state.records.forEach(r=>years.add(parseDateStr(r.date).getFullYear()));
+      state.books.forEach(b=>{ if(b.startDate) years.add(parseDateStr(b.startDate).getFullYear()); });
+      const sortedYears = [...years].sort((a,b)=>a-b);
+      sortedYears.forEach(y=>yearSel.appendChild(el('option',{value:y},[document.createTextNode(String(y))])));
+    }
+    yearSel.value = currentYear;
+  }
+
+  let historyView = { month: new Date().getMonth(), year: new Date().getFullYear() };
+
+  function renderHistory(){
+    const monthSel = document.getElementById('histMonth');
+    const yearSel = document.getElementById('histYear');
+    populateMonthYearSelects(monthSel, yearSel, historyView.month, historyView.year);
+
+    monthSel.onchange = ()=>{ historyView.month = Number(monthSel.value); renderHistory(); };
+    yearSel.onchange = ()=>{ historyView.year = Number(yearSel.value); renderHistory(); };
+
+    const grid = document.getElementById('histCalGrid');
+    grid.innerHTML = '';
+    DOW_LABELS.forEach(l=>grid.appendChild(text('div','cal-dow',l)));
+
+    const y = historyView.year, m = historyView.month;
+    const firstOfMonth = new Date(y, m, 1);
+    let leadingBlanks = firstOfMonth.getDay() - 1; // Pazartesi ilk gün
+    if(leadingBlanks < 0) leadingBlanks = 6;
+    for(let i=0;i<leadingBlanks;i++) grid.appendChild(el('div',{class:'cal-cell empty'}));
+
+    const totalDays = daysInMonth(y,m);
+    const dailyTotals = getDailyTotals();
+    const todayIso = todayStr();
+
+    for(let day=1; day<=totalDays; day++){
+      const dateStr = toDateStr(new Date(y,m,day));
+      const pages = dailyTotals[dateStr] || 0;
+      const level = levelForPages(pages);
+      const cell = el('div', {class:'cal-cell lvl-'+level, title: dateStr===todayIso? 'Bugün' : ''});
+      cell.appendChild(text('div','daynum', String(day)));
+      cell.appendChild(text('div','pages', pages>0? pages+'s' : '0'));
+      if(dateStr === todayIso) cell.style.outline = '2px solid var(--gold)';
+      grid.appendChild(cell);
+    }
+  }
+
+  /* =========================================================
+     ÇİZİM: İSTATİSTİKLER
+  ========================================================= */
+  function renderWeekStats(){
+    const now = new Date();
+    const wkStart = startOfWeek(now);
+    const dailyTotals = getDailyTotals();
+    const labels = [], values = [];
+    for(let i=0;i<7;i++){
+      const d = addDays(wkStart,i);
+      labels.push(DOW_LABELS[i]);
+      values.push(dailyTotals[toDateStr(d)] || 0);
+    }
+    renderBarChart(document.getElementById('weekStatsChart'), labels, values);
+
+    const total = values.reduce((a,b)=>a+b,0);
+    const daysRead = values.filter(v=>v>0).length;
+    const bestIdx = values.indexOf(Math.max(...values));
+    const best = values[bestIdx] > 0 ? (labels[bestIdx] + ' (' + values[bestIdx] + 's)') : '—';
+    const avg = (total / 7).toFixed(1);
+
+    const row = document.getElementById('weekStatsRow');
+    row.innerHTML = '';
+    row.appendChild(statMini('Haftalık toplam', total));
+    row.appendChild(statMini('Günlük ortalama', avg));
+    row.appendChild(statMini('En iyi gün', best));
+    row.appendChild(statMini('Okunan gün', daysRead + ' / 7'));
+  }
+
+  let monthStatsView = { month: new Date().getMonth(), year: new Date().getFullYear() };
+
+  function renderMonthStats(){
+    const monthSel = document.getElementById('statMonth');
+    const yearSel = document.getElementById('statYear');
+    populateMonthYearSelects(monthSel, yearSel, monthStatsView.month, monthStatsView.year);
+    monthSel.onchange = ()=>{ monthStatsView.month = Number(monthSel.value); renderMonthStats(); };
+    yearSel.onchange = ()=>{ monthStatsView.year = Number(yearSel.value); renderMonthStats(); };
+
+    const y = monthStatsView.year, m = monthStatsView.month;
+    const totalDays = daysInMonth(y,m);
+    const dailyTotals = getDailyTotals();
+    const labels = [], values = [];
+    for(let d=1; d<=totalDays; d++){
+      labels.push(String(d));
+      values.push(dailyTotals[toDateStr(new Date(y,m,d))] || 0);
+    }
+    renderBarChart(document.getElementById('monthStatsChart'), labels, values);
+
+    const total = values.reduce((a,b)=>a+b,0);
+    const daysRead = values.filter(v=>v>0).length;
+    const zeroDays = totalDays - daysRead;
+    const bestIdx = values.indexOf(Math.max(...values));
+    const best = values[bestIdx] > 0 ? (MONTH_NAMES[m] + ' ' + labels[bestIdx] + ' (' + values[bestIdx] + 's)') : '—';
+    const avg = (total / totalDays).toFixed(1);
+
+    // bu ay içindeki en uzun seri
+    let longest = 0, run = 0;
+    values.forEach(v=>{ if(v>0){ run+=1; longest=Math.max(longest,run);} else { run=0; } });
+
+    const row = document.getElementById('monthStatsRow');
+    row.innerHTML = '';
+    row.appendChild(statMini('Toplam sayfa', total));
+    row.appendChild(statMini('Günlük ortalama', avg));
+    row.appendChild(statMini('En iyi gün', best));
+    row.appendChild(statMini('Okunan gün', daysRead + ' / ' + totalDays));
+    row.appendChild(statMini('Sıfır sayfalı gün', zeroDays));
+    row.appendChild(statMini('En uzun seri (ay)', longest + ' gün'));
+  }
+
+  let yearOnlyView = new Date().getFullYear();
+
+  function renderYearChart(){
+    const yearSel = document.getElementById('yearOnlySelect');
+    if(yearSel.options.length === 0){
+      const thisYear = new Date().getFullYear();
+      const years = new Set([thisYear]);
+      state.records.forEach(r=>years.add(parseDateStr(r.date).getFullYear()));
+      [...years].sort((a,b)=>a-b).forEach(y=>yearSel.appendChild(el('option',{value:y},[document.createTextNode(String(y))])));
+    }
+    yearSel.value = yearOnlyView;
+    yearSel.onchange = ()=>{ yearOnlyView = Number(yearSel.value); renderYearChart(); };
+
+    const dailyTotals = getDailyTotals();
+    const values = MONTH_NAMES.map((name,idx)=>{
+      let sum = 0;
+      const days = daysInMonth(yearOnlyView, idx);
+      for(let d=1; d<=days; d++){
+        sum += dailyTotals[toDateStr(new Date(yearOnlyView, idx, d))] || 0;
+      }
+      return sum;
+    });
+    const labels = MONTH_NAMES.map(n=>n.slice(0,3));
+    renderBarChart(document.getElementById('yearChart'), labels, values);
+  }
+
+  function renderBookStatsTable(){
+    const container = document.getElementById('bookStatsTable');
+    container.innerHTML = '';
+    if(state.books.length === 0){
+      container.appendChild(text('div','empty-state','İstatistiklerini görmek için bir kitap ekle.'));
+      return;
+    }
+    const tbl = el('table');
+    const headRow = el('tr',{},[
+      text('th','','Kitap'), text('th','','Okunan'), text('th','','Kalan'),
+      text('th','','İlerleme'), text('th','','Okuma günü'), text('th','','Ort./gün'),
+      text('th','','Tahmini bitiş')
+    ]);
+    tbl.appendChild(el('thead',{},[headRow]));
+    const tbody = el('tbody');
+    state.books.forEach(book=>{
+      const read = getBookTotalPagesRead(book.id);
+      const remaining = Math.max(0, book.totalPages - read);
+      const pct = Math.min(100, Math.round((read/book.totalPages)*100));
+      const readingDays = getBookReadingDays(book.id);
+      const avg = readingDays>0 ? Math.round(read/readingDays) : 0;
+      const est = getBookStatus(book) === 'Completed' ? 'Tamamlandı' : estimateCompletionDate(book);
+      const tr = el('tr',{},[
+        text('td','',book.title),
+        text('td','mono',String(read)),
+        text('td','mono',String(remaining)),
+        text('td','mono',pct+'%'),
+        text('td','mono',String(readingDays)),
+        text('td','mono',String(avg)),
+        text('td','',est || '—')
+      ]);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    container.appendChild(tbl);
+  }
+
+  function renderStatistics(){
+    renderWeekStats();
+    renderMonthStats();
+    renderYearChart();
+    renderBookStatsTable();
+  }
+
+  /* =========================================================
+     AYARLAR: dışa aktar / içe aktar / tümünü sil
+  ========================================================= */
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const stamp = todayStr();
+    a.download = `defter-yedek-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Yedek indirildi.');
+  });
+
+  document.getElementById('importBtn').addEventListener('click', ()=>{
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(evt){
+      try{
+        const parsed = JSON.parse(evt.target.result);
+        if(!parsed || !Array.isArray(parsed.books) || !Array.isArray(parsed.records)){
+          showToast('Bu dosya geçerli bir defter yedeği gibi görünmüyor.');
+          return;
+        }
+        const ok = await confirmDialog('Mevcut tüm veriler değiştirilsin mi?', 'İçe aktarma, bu tarayıcıda şu anda saklı olan tüm kitap ve okuma kayıtlarının üzerine yazacak.');
+        if(!ok) return;
+        state = { version: parsed.version || 1, books: parsed.books, records: parsed.records };
+        saveData();
+        renderAll();
+        showToast('Veriler başarıyla içe aktarıldı.');
+      }catch(err){
+        console.error(err);
+        showToast('Dosya okunamadı — geçerli bir JSON yedeği olduğundan emin ol.');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('deleteAllBtn').addEventListener('click', async ()=>{
+    const ok = await confirmDialog('Her şey silinsin mi?', 'Bu, tüm kitap ve okuma kayıtlarını kalıcı olarak siler. Önce bir yedek almayı düşün. Bu işlem geri alınamaz.');
+    if(!ok) return;
+    state = defaultData();
+    saveData();
+    renderAll();
+    showToast('Tüm veriler silindi.');
+  });
+
+  /* =========================================================
+     TÜMÜNÜ ÇİZ
+  ========================================================= */
+  function renderAll(){
+    renderDashboard();
+    renderAddReading();
+    renderBooks();
+    renderHistory();
+    renderStatistics();
+  }
+
+  // İlk kurulum: hangi depolama yönteminin gerçekten çalıştığını tespit et,
+  // ardından veriyi yükleyip ekranı çiz.
+  (async function init(){
+    storageBackend = await detectStorageBackend();
+    if(storageBackend === 'none'){
+      document.getElementById('storageBanner').style.display = 'block';
+    }
+    state = await loadData();
+    document.getElementById('rDate').value = todayStr();
+    renderAll();
+  })();
+
+})();
+</script>
+</body>
+</html>
